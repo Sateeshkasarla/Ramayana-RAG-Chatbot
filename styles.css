@@ -217,3 +217,57 @@ div[style*="display:flex"] {
 ::-webkit-scrollbar-thumb:hover {
     background: #64748B;
 }
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #F1F5F9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #94A3B8;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #64748B;
+}
+
+
+/* =====================================================
+   FORCE WHITE CHAT INPUT (ALL DEVICES & BROWSERS)
+===================================================== */
+
+/* Entire input area */
+[data-testid="stChatInput"]{
+    background: #ffffff !important;
+    border: 2px solid #E5E7EB !important;
+    border-radius: 18px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,.08) !important;
+}
+
+/* Inner wrapper */
+[data-testid="stChatInput"] > div{
+    background: #ffffff !important;
+    border-radius: 18px !important;
+}
+
+/* Text area */
+[data-testid="stChatInput"] textarea{
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: none !important;
+}
+
+/* Placeholder */
+[data-testid="stChatInput"] textarea::placeholder{
+    color: #6B7280 !important;
+    opacity: 1 !important;
+}
+
+/* Send button */
+[data-testid="stChatInput"] button{
+    background: transparent !important;
+}

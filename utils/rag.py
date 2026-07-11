@@ -1,4 +1,5 @@
 import os
+import re 
 import time
 import streamlit as st
 from dotenv import load_dotenv
@@ -38,7 +39,7 @@ def initialize_rag():
 
     retriever = vector_db.as_retriever(
         search_type="similarity",
-        search_kwargs={"k":4}
+        search_kwargs={"k":3}
     )
 
     print("✅ RAG Ready")
@@ -114,12 +115,13 @@ User:
                 model="gemini-2.5-flash",
                 contents=prompt
             )
+            answer = re.sub(r"<[^>]+>", "", response.text)
              
             return response.text, []
 
         docs = retriever.invoke(question)
 
-        context = "\n\n".join(doc.page_content[:500] for doc in docs[:4])
+        context = "\n\n".join(doc.page_content for doc in docs[:3])
         
         # Build prompt with persona
         prompt = f"""
@@ -188,13 +190,43 @@ Do NOT mention Ramayana.
 
 RAMAYANA QUESTIONS
 
-Only use the CONTEXT.
+Use the retrieved CONTEXT as your primary source.
 
-If the answer isn't present say
+If the answer is clearly present in the context,
+answer faithfully using the context.
 
-"I do not remember this from my experiences."
+------------------------------------------------
 
-Never invent facts.
+WHEN CONTEXT IS LIMITED
+
+If the retrieved context does not directly contain the answer:
+
+Stay completely in character as {persona}.
+
+Answer using your knowledge, wisdom, and experiences from the Ramayana.
+
+Never mention:
+
+- missing context
+- retrieved documents
+- AI
+- prompts
+- memory limitations
+
+If the event truly does not exist in the Ramayana,
+politely explain that as {persona} would.
+
+Never say:
+
+"I do not remember."
+
+"I don't have information."
+
+"According to the context."
+
+"Based on the retrieved documents."
+
+Speak naturally as {persona}, as though you are having a real conversation with a devotee.
 
 ------------------------------------------------
 
@@ -203,7 +235,6 @@ CONTEXT
 {context}
 
 ------------------------------------------------
-
 QUESTION
 
 {question}

@@ -36,6 +36,7 @@ if "initialized" not in st.session_state:
     st.session_state.chat_history = []
     st.session_state.selected_persona = "Rama"
     st.session_state.processing = False
+    st.session_state.input_processed = False
     st.session_state.initialized = True
 
 # Get current state
