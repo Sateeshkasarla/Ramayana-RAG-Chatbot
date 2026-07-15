@@ -2,8 +2,10 @@ import os
 import re 
 import time
 import streamlit as st
+from openai import OpenAI
 from dotenv import load_dotenv
 from google import genai
+from typer import prompt
 from utils.embeddings import get_embedding_model
 from utils.vectorstore import load_vectorstore
 from utils.personas import PERSONAS
@@ -12,26 +14,10 @@ from utils.personas import PERSONAS
 # Load Environment Variables
 # -----------------------------------
 load_dotenv()
-api_key = os.getenv("GOOGLE_API_KEY")
-
-# If not in .env, try Streamlit Secrets
-if not api_key:
-    try:
-        api_key = st.secrets["GOOGLE_API_KEY"]
-        print("Using Streamlit Secrets")
-    except Exception:
-        pass
-
-print(f"API Key Found: {api_key is not None}")
 
 @st.cache_resource
 def initialize_rag():
     print("🚀 Initializing RAG...")
-
-    client = None
-
-    if api_key:
-        client = genai.Client(api_key=api_key)
 
     embeddings = get_embedding_model()
 
@@ -44,10 +30,10 @@ def initialize_rag():
 
     print("✅ RAG Ready")
 
-    return client, retriever
+    return retriever
 
 
-client, retriever = initialize_rag()
+retriever = initialize_rag()
 
 # -----------------------------------
 # Ask Question - Make sure this function is properly defined and exported
@@ -59,12 +45,34 @@ def ask_question(question, persona="Rama"):
     print("PERSONA :", persona)
     print("QUESTION :", question)
     print("=" * 60)
+    # Get the latest API key from sidebar
+    provider = st.session_state.get("provider", "Gemini")
+
+    if provider == "Gemini":
+       api_key = (
+           st.session_state.get("user_api_key")
+           or os.getenv("GOOGLE_API_KEY")
+           or ""
+       ).strip()
+    else:
+       api_key = (
+           st.session_state.get("user_api_key")
+           or os.getenv("OPENAI_API_KEY")
+           or ""
+       ).strip()
+    
+    if not api_key:
+        return f"⚠️ Please enter your{provider} API Key.", []
+
+    if provider == "Gemini":
+       client = genai.Client(api_key=api_key)
+
+    else:
+       client = OpenAI(api_key=api_key)
     """
     Ask a question to the RAG chatbot with the specified persona.
     Returns (answer, source_documents)
     """
-    if client is None:
-        return f"⚠️ {persona} says: The divine connection is not established. Please check your API key.", []
     
     if retriever is None:
         return f"⚠️ {persona} says: The scriptures are not loaded. Please run build_vector_db.py first.", []
@@ -88,7 +96,7 @@ def ask_question(question, persona="Rama"):
 
         question_lower = question.lower()
 
-        if any(word in question_lower for word in small_talk):
+        if question_lower.strip() in small_talk:
             prompt = f"""
 {PERSONAS[persona]}
 
@@ -111,13 +119,39 @@ User:
 {question}
 """
 
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
+            # Get selected model from sidebar
+            model = st.session_state.get(
+                "model_name",
+                "gemini-2.5-flash"
             )
-            answer = re.sub(r"<[^>]+>", "", response.text)
-             
-            return response.text, []
+
+            # Generate response
+            if provider == "Gemini":
+                # Gemini-style client
+                response = client.models.generate_content(
+                    model=model,
+                    contents=prompt
+                )
+                answer = response.text
+            else:
+                # OpenAI-style client
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ]
+                )
+                try:
+                    answer = response.choices[0].message.content
+                except Exception:
+                    answer = getattr(response, 'text', '')
+
+            answer = re.sub(r"<[^>]+>", "", answer)
+
+            return answer, []
 
         docs = retriever.invoke(question)
 
@@ -245,13 +279,33 @@ ANSWER
         
 """
         # Generate response
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
+        model = st.session_state.get(
+            "model_name",
+            "gemini-2.5-flash"
         )
+        if provider == "Gemini":
+            response = client.models.generate_content(
+                model=model,
+                contents=prompt
+            )
 
-        return response.text, docs
-        
+            answer = response.text.strip()
+        else:
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+
+            answer = response.choices[0].message.content.strip()
+        answer = re.sub(r"<[^>]+>", "", answer)
+
+        return answer, docs
+
     except Exception as e:
         print(f"Error in ask_question: {e}")
         error = str(e)
@@ -260,7 +314,13 @@ ANSWER
             return f"⚠️ {persona} says: The divine channel is not available. Check your API key.", []
         elif "429" in error:
             return f"⚠️ {persona} says: My powers are temporarily limited. Try again later.", []
-        elif "401" in error or "Unauthenticated" in error:
+        elif any(x in error for x in [
+            "401",
+            "Unauthenticated",
+            "API_KEY_INVALID",
+            "PERMISSION_DENIED",
+            "INVALID_ARGUMENT"
+        ]):
             return f"❌ {persona} says: The divine connection is broken. Please check your API key.", []
         else:
             return f"⚠️ {persona} says: I encountered an issue.\n\nError: {error}", []

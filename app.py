@@ -1,4 +1,10 @@
 # IMPORTANT: This must be the FIRST Streamlit command
+from google import genai
+from openai import OpenAI
+from utils.api_validator import (
+    validate_gemini_key,
+    validate_openai_key,
+)
 import streamlit as st
 st.set_page_config(
     page_title="Ramayana RAG Chatbot",
@@ -68,12 +74,88 @@ CHARACTER_NAMES = {
 # SIDEBAR
 # -----------------------------
 with st.sidebar:
-    st.markdown(
-        "<div class='sidebar-title'>📖 Ramayana RAG</div>",
-        unsafe_allow_html=True
-    )
+    st.markdown("""
+                 <div class="sidebar-title">
+                📖 <span>Ramayana GPT</span>
+                 </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("---")
+    with st.container(border=True):
+
+         st.markdown("## ⚙️ Model Configuration")
+
+         provider = st.selectbox(
+              "AI Provider",
+              ["Gemini", "OpenAI"],
+              key="provider"
+         )
+
+         if provider == "Gemini":
+
+             api_key = st.text_input(
+                 "Gemini API Key",
+                 type="password",
+                 key="gemini_api"
+            )
+
+             model_name = st.selectbox(
+                 "Gemini Model",
+                 [
+                     "gemini-2.5-flash",
+                     "gemini-2.5-pro",
+                     "gemini-2.0-flash",
+                     "gemini-2.0-flash-lite"
+                 ]
+           )
+
+         else:
+
+             api_key = st.text_input(
+                 "OpenAI API Key",
+                 type="password",
+                 key="openai_api"
+             )
+
+             model_name = st.selectbox(
+                 "OpenAI Model",
+                 [
+                     "gpt-4.1",
+                     "gpt-4.1-mini",
+                     "gpt-4o",
+                     "gpt-4o-mini"
+                 ]
+             )
+    st.session_state["model_name"] = model_name
+
+    if api_key.strip():
+        if provider == "Gemini":
+            ok, message = validate_gemini_key(api_key.strip())
+        else:
+            ok, message = validate_openai_key(api_key.strip())
+
+        if ok:
+            st.success("✅ API Key Verified")
+
+            st.session_state["user_api_key"] = api_key.strip()
+            st.session_state["using_user_key"] = True
+
+        else:
+            st.error(f"❌ "+ message)
+
+            st.session_state.pop("user_api_key", None)
+            st.session_state["using_user_key"] = False
+
+    else:
+        st.session_state.pop("user_api_key", None)
+        st.session_state["using_user_key"] = False
+    
+
+    if st.session_state.get("using_user_key", False):
+       st.success("🔑 Using Your API Key")
+    else:
+       st.info(f"🔑 Using Default {provider} API Key")
+
 
     # Character selection
     st.markdown("### 👤 Choose Character")
@@ -81,24 +163,33 @@ with st.sidebar:
     characters = ["Rama", "Lakshmana", "Hanuman", "Sita", "Ravana", "Vibhishanudu"]
     
     for char in characters:
-        button_type = "primary" if char == persona else "secondary"
+        selected = char == persona
+
+        if selected:
+            st.markdown(
+                """
+                <style>
+                div[data-testid="stButton"] > button[kind="primary"]{
+                    background:linear-gradient(135deg,#2563EB,#1D4ED8) !important;
+                    color:white !important;
+                    border:none !important;
+                    box-shadow:0 8px 18px rgba(37,99,235,.25);
+                }
+                </style>
+                """,
+                unsafe_allow_html=True,
+            )
+
         if st.button(
-            f"{CHARACTER_IMAGES[char]} {char}",
+            f"{CHARACTER_IMAGES[char]}  {char}",
             key=f"btn_{char}",
-            type=button_type,
-            use_container_width=True,):
-            if st.session_state.selected_persona != char:
-                st.session_state.selected_persona = char
-                st.rerun()
+            type="primary" if selected else "secondary",
+            use_container_width=True,
+        ):
+            st.session_state.selected_persona = char
+            st.rerun()
 
     st.markdown("---")
-    
-    # Clear conversation
-    if st.button("🗑 Clear Conversation", use_container_width=True):
-        st.session_state.character_chats[persona] = []
-        st.session_state.chat_history = []
-        st.session_state.processing = False
-        st.rerun()
     
     # Chat History in Sidebar
     st.markdown("### 📜 Chat History")
@@ -113,10 +204,23 @@ with st.sidebar:
                 unsafe_allow_html=True
             )
     else:
+        st.caption("No chat history yet")
         st.markdown("<p style='color:#94A3B8;font-size:14px;'>No chat history yet</p>", unsafe_allow_html=True)
-    
-    if st.button("🗑 Clear All History", use_container_width=True):
+
+    if st.button("🗑 Clear All Chats", use_container_width=True):
+        # Clear every character chat
+        for character in st.session_state.character_chats:
+            st.session_state.character_chats[character] = []
+
+        # Clear sidebar history
         st.session_state.chat_history = []
+
+        st.session_state.processing = False
+
+        st.rerun()
+    # Clear current character chat
+    if st.button("🗑 Clear Current Chat", use_container_width=True):
+        st.session_state.character_chats[persona] = []
         st.session_state.processing = False
         st.rerun()
 
@@ -156,7 +260,27 @@ with st.sidebar:
     st.markdown("<br>", unsafe_allow_html=True)
     st.metric("📄 Documents", "1540")
     st.metric("🧩 Chunks", "4509")
-    st.metric("🤖 Model", "Gemini 2.5 Flash")
+    st.metric("🤖 Model", st.session_state.get("model_name", "Gemini 2.5 Flash"))
+    # Push footer to bottom
+    st.markdown(
+           """
+           <div style="height:60px;"></div>
+           """,
+           unsafe_allow_html=True,
+        )
+
+    st.markdown(
+         """
+    <div class="sidebar-footer">
+        <div>© 2026</div>
+        <div><strong>Developed by Kasarla Sateesh</strong></div>
+        <div class="footer-tech">
+            Powered by Gemini • LangChain • FAISS • Streamlit
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+    )
 
 # -----------------------------
 # HEADER
@@ -164,38 +288,35 @@ with st.sidebar:
 st.markdown("""
 <div class="header-card">
 <h1 class="main-title">
-📖 Ramayana RAG Chatbot
+📖 Ramayana GPT
 </h1>
+
 <p class="sub-title">
-Explore the wisdom of the Ramayana using <b>Retrieval-Augmented Generation (RAG)</b>.
+Converse with Lord Rama, Hanuman, Sita, Lakshmana, Ravana and Vibhishana to explore the timeless wisdom of the Ramayana.
 </p>
 </div>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=True
+)
 
 # Display current character
 current_char = persona
+
 st.markdown(
     f"""
-    <div style='background:linear-gradient(135deg,#1E293B,#0F172A);
-    padding:15px 20px;border-radius:15px;margin:10px 0 20px 0;
-    border-left:5px solid #FCD34D;'>
-    <span style='font-size:28px;'>{CHARACTER_IMAGES[current_char]}</span>
-    <span style='color:white;font-size:22px;font-weight:600;margin-left:12px;'>
-    Chatting with {CHARACTER_NAMES[current_char]}
-    </span>
+    <div class="chat-header">
+        <div class="chat-header-icon">
+            {CHARACTER_IMAGES[current_char]}
+        </div>
+       <p>
+        <div class="chat-header-title">
+            Chatting with {CHARACTER_NAMES[current_char]}
+        </div>
+        <p>
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
-
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.info("📚 **1540 Documents Loaded**")
-with col2:
-    st.success("⚡ Gemini 2.5 Flash")
-with col3:
-    st.warning("⚡ FAISS Vector Search")
-
+  
 # -----------------------------
 # DISPLAY CHAT HISTORY - Only once
 # -----------------------------
@@ -225,7 +346,7 @@ for msg in messages:
                     <div style='font-weight:600;color:#16A34A;font-size:14px;margin-bottom:4px;'>
                         {char_name}
                     </div>
-                    <div style='background:white;padding:18px 20px;
+                    <div style='background:white;color:#111827;padding:18px 20px;
                     border-radius:18px 18px 18px 5px;max-width:70%;
                     border-left:5px solid #16A34A;
                     box-shadow:0 5px 18px rgba(0,0,0,.08);'>
@@ -239,7 +360,7 @@ for msg in messages:
         
         if "sources" in msg and msg["sources"]:
             shown = set()
-            with st.expander(f"📚 Sources ({len(shown)})"):
+            with st.expander(f"📚 Sources ({len(msg['sources'])})"):
                 for doc in msg["sources"]:
                     source = doc.metadata.get("source", "Unknown")
                     page = doc.metadata.get("page", "N/A")
@@ -262,13 +383,50 @@ for msg in messages:
 if len(messages) == 0:
     st.markdown("## 💡 Example Questions")
     
-    example_questions = [
-        "Why did you go into exile, Lord Rama?",
-        "Hanuman, how did you cross the ocean?",
-        "Sita, what gave you strength in Ashoka Vatika?",
-        "Ravana, why did you abduct Sita?"
+    example_questions = {
+    "Rama": [
+        "Why did you go into exile?",
+        "What is the importance of Dharma?",
+        "How did you defeat Ravana?",
+        "What advice do you give for a righteous life?"
+    ],
+
+    "Lakshmana": [
+        "Why did you accompany Rama to the forest?",
+        "What was your role during the exile?",
+        "Tell me about the Lakshmana Rekha.",
+        "What did you learn from Lord Rama?"
+    ],
+
+    "Hanuman": [
+        "How did you cross the ocean?",
+        "How did you find Mother Sita?",
+        "What made your devotion so strong?",
+        "What message did you bring from Rama?"
+    ],
+
+    "Sita": [
+        "How did you remain strong in Ashoka Vatika?",
+        "What is true devotion?",
+        "What inspired your courage?",
+        "What message do you have for women today?"
+    ],
+
+    "Ravana": [
+        "Why did you abduct Sita?",
+        "What was your greatest strength?",
+        "Do you regret your decisions?",
+        "What lesson should people learn from your life?"
+    ],
+
+    "Vibhishanudu": [
+        "Why did you leave Ravana?",
+        "Why did you support Lord Rama?",
+        "What is the value of righteousness?",
+        "What advice do you have about choosing Dharma?"
     ]
-    
+}
+    example_questions = example_questions.get(persona, [])
     cols = st.columns(2)
     for i, q in enumerate(example_questions):
         with cols[i % 2]:
@@ -301,12 +459,23 @@ if "_question" in st.session_state:
     })
 
     st.rerun()
-    print("APP RERUN")
-
-
 # Handle chat input
 question = st.chat_input(
-    f"Chat with {CHARACTER_NAMES[persona]}..."
+    f"Ask {CHARACTER_NAMES[persona]} anything about the Ramayana..."
+)
+st.markdown(
+    """
+    <div style="
+        text-align:center;
+        color:#6B7280;
+        font-size:13px;
+        margin-top:6px;
+        margin-bottom:8px;
+    ">
+    ⚠️ AI can make mistakes. Please verify important information with authentic Ramayana sources.
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
 if question and not st.session_state.input_processed:
@@ -332,8 +501,3 @@ if question and not st.session_state.input_processed:
 
 if question is None:
     st.session_state.input_processed = False
-# -----------------------------
-# FOOTER
-# -----------------------------
-st.markdown("---")
-st.caption("© 2026 | Developed by Kasarla Sateesh | Powered by Gemini • LangChain • FAISS • Streamlit")
