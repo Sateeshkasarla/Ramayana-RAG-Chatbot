@@ -1,91 +1,314 @@
-# 📖 Ramayana RAG Chatbot
+# 📖 Ramayana GPT – AI-Powered RAG Chatbot
 
-<div align="center">
+An AI-powered Retrieval-Augmented Generation (RAG) chatbot that enables users to interact with characters from the **Ramayana** such as **Lord Rama, Lakshmana, Hanuman, Sita, Ravana, and Vibhishana**.
 
-![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)
-![Streamlit](https://img.shields.io/badge/Streamlit-Framework-red?logo=streamlit)
-![LangChain](https://img.shields.io/badge/LangChain-RAG-green)
-![FAISS](https://img.shields.io/badge/FAISS-VectorDB-orange)
-![Gemini](https://img.shields.io/badge/Google-Gemini%202.5%20Flash-blue)
-
-### AI-Powered Ramayana Knowledge Assistant using Retrieval-Augmented Generation (RAG)
-
-**Developed by Kasarla Sateesh**
-
-</div>
+The chatbot combines **Large Language Models (LLMs)** with **Retrieval-Augmented Generation (RAG)** to answer questions using trusted Ramayana documents while maintaining each character's unique personality.
 
 ---
 
-## Project Overview
+# 🚀 Live Demo
 
-The Ramayana RAG Chatbot is an AI-powered chatbot that answers questions from Ramayana documents using Retrieval-Augmented Generation (RAG). It combines LangChain, FAISS, HuggingFace embeddings, and Google Gemini 2.5 Flash to generate accurate, source-grounded answers.
+🔗 **Live Application:**  
+https://ramayana-rag-chatbot.streamlit.app/
 
-## Features
+🔗 **GitHub Repository:**  
+https://github.com/Sateeshkasarla/Ramayana-RAG-Chatbot
 
-- PDF and TXT document loading
-- Automatic text chunking
-- HuggingFace sentence embeddings
-- FAISS vector database
-- Google Gemini 2.5 Flash integration
-- Persona-based responses (Rama, Lakshmana, Hanuman)
-- Source citations
-- Professional Streamlit interface
+---
 
-## Tech Stack
+# ✨ Features
 
-| Component | Technology |
-|---|---|
-| Language | Python 3.11 |
-| UI | Streamlit |
-| Framework | LangChain |
-| Vector DB | FAISS |
-| Embeddings | HuggingFace |
-| LLM | Gemini 2.5 Flash |
+- 🤖 AI-powered Ramayana chatbot
+- 📚 Retrieval-Augmented Generation (RAG)
+- 👑 Six Ramayana Characters
+  - Lord Rama
+  - Lakshmana
+  - Hanuman
+  - Devi Sita
+  - Ravana
+  - Vibhishana
+- 🔍 FAISS Vector Search
+- 🧠 LangChain Integration
+- 📄 PDF Knowledge Base
+- 💬 Persona-based Conversations
+- 📖 Source Document References
+- 🔐 Supports User API Keys
+- ⚙️ Gemini & OpenAI Support
+- 🎨 Modern Streamlit UI
+- 📱 Responsive Layout
 
-## Folder Structure
+---
 
-```text
-Ramayana-RAG-Chatbot/
+# 🏗 Project Architecture
+
+```
+                User
+                  │
+                  ▼
+        Streamlit Web Application
+                  │
+        ┌─────────┴─────────┐
+        │                   │
+ Character Selection     API Key Validation
+        │                   │
+        └─────────┬─────────┘
+                  ▼
+           RAG Pipeline
+                  │
+         LangChain Retriever
+                  │
+         FAISS Vector Database
+                  │
+          Relevant Documents
+                  │
+          Prompt Engineering
+                  │
+       Gemini / OpenAI LLM
+                  │
+                  ▼
+        Persona-based Response
+```
+
+---
+
+# 🛠 Technology Stack
+
+| Technology | Purpose |
+|------------|----------|
+| Python     | Programming Language |
+| Streamlit  | Web Application |
+| LangChain  | RAG Framework |
+| FAISS      | Vector Database |
+| Google Gemini | Large Language Model |
+| OpenAI GPT | Large Language Model |
+| HuggingFace| Embeddings |
+| PyPDF      | PDF Processing |
+| dotenv     | Environment Variables |
+
+---
+
+# 📂 Project Structure
+
+```
+Ramayana-RAG-Chatbot
+│
+├── .streamlit/
+│   └── config.toml
+│
+├── data/
+│   ├── Ramayana Educational...
+│   ├── Shri-Ram-Charitmanas.pdf
+│   └── valmiki_ramayanam.pdf
+│
+├
+│
+├── report/
+│   ├── Architecture_Diagram.png
+│   └── Project_Report.pdf
+│
+├── screenshots/
+│   ├── Chatbot.png
+│   ├── Chatbot1.png
+│ 
+│  
+│
+├── utils/
+│   ├── api_validator.py
+│   ├── embeddings.py
+│   ├── loader.py
+│   ├── personas.py
+│   ├── prompts.py
+│   ├── rag.py
+│   ├── splitter.py
+│   └── vectorstore.py
+│
+├── vector_db/
+│
 ├── app.py
 ├── build_vector_db.py
 ├── requirements.txt
+├── runtime.txt
 ├── styles.css
-├── utils/
-├── data/
-├── vector_db/
-├── screenshots/
-├── report/
-└── README.md
+├── README.md
+└── .gitignore
 ```
 
-## Installation
+---
+
+# ⚙️ Installation
+
+## Clone Repository
+
+```bash
+git clone https://github.com/Sateeshkasarla/Ramayana-RAG-Chatbot.git
+
+cd Ramayana-RAG-Chatbot
+```
+
+---
+
+## Create Virtual Environment
+
+Windows
+
+```bash
+python -m venv venv
+
+venv\Scripts\activate
+```
+
+Linux / Mac
+
+```bash
+python3 -m venv venv
+
+source venv/bin/activate
+```
+
+---
+
+## Install Dependencies
 
 ```bash
 pip install -r requirements.txt
+```
+
+---
+
+# 🔑 Environment Variables
+
+Create a `.env` file.
+
+Example:
+
+```
+GOOGLE_API_KEY=YOUR_GEMINI_API_KEY
+
+OPENAI_API_KEY=YOUR_OPENAI_API_KEY
+```
+
+> The application also supports entering API keys directly from the sidebar without modifying the `.env` file.
+
+---
+
+# 📚 Build Vector Database
+
+Run once:
+
+```bash
 python build_vector_db.py
+```
+
+This will:
+
+- Load PDFs
+- Split documents
+- Create embeddings
+- Build FAISS Vector Database
+
+---
+
+# ▶️ Run Application
+
+```bash
 streamlit run app.py
 ```
 
-## Workflow
+---
 
-1. Load documents
-2. Split into chunks
-3. Generate embeddings
-4. Store in FAISS
-5. Retrieve relevant chunks
-6. Generate answer with Gemini
-7. Display answer with sources
+# 💬 Supported AI Providers
 
-## Future Enhancements
+The chatbot supports multiple LLM providers.
 
-- Voice input
-- Multi-language support
-- OCR support
-- User authentication
-- Conversation memory
+## Google Gemini
 
-## Author
+- gemini-2.5-flash
+- gemini-2.5-pro
+- gemini-2.0-flash
+- gemini-2.0-flash-lite
+
+---
+
+## OpenAI
+
+- GPT-4.1
+- GPT-4.1 Mini
+- GPT-4o
+- GPT-4o Mini
+
+---
+
+# 👑 Available Characters
+
+| Character | Description |
+|-----------|-------------|
+| Lord Rama | Dharma, Leadership, Wisdom |
+| Lakshmana | Loyalty, Duty |
+| Hanuman | Devotion, Courage |
+| Devi Sita | Compassion, Strength |
+| Ravana | Knowledge, Ego |
+| Vibhishana | Righteousness |
+
+Each character has a dedicated persona prompt to maintain authentic conversational behavior.
+
+---
+
+# 🔍 RAG Workflow
+
+1. User selects a character.
+2. User asks a question.
+3. Question is converted into embeddings.
+4. FAISS retrieves relevant document chunks.
+5. Context is combined with the selected persona prompt.
+6. Gemini/OpenAI generates the answer.
+7. Sources are displayed alongside the response.
+
+---
+
+# 📈 Future Improvements
+
+- Voice Conversations
+- Telugu Support
+- Hindi Support
+- Sanskrit Responses
+- User Authentication
+- Conversation Export
+- Mobile Optimization
+- Additional Ramayana Characters
+
+---
+
+# 👨‍💻 Developed By
 
 **Kasarla Sateesh**
 
-B.Tech CSE | AI Project
+B.Tech – Computer Science Engineering
+
+Email: sathishroyal967@gmail.com
+
+GitHub: https://github.com/Sateeshkasarla
+
+LinkedIn: *(Add your LinkedIn profile URL here)*
+
+---
+
+# 📄 License
+
+This project is developed for educational and demonstration purposes.
+
+---
+
+# 🙏 Acknowledgements
+
+- Google Gemini
+- OpenAI
+- LangChain
+- FAISS
+- Hugging Face
+- Streamlit
+- Valmiki Ramayana
+- Shri Ram Charitmanas
+
+---
+
+⭐ If you found this project useful, consider giving the repository a star.
